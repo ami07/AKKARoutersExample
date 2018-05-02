@@ -81,8 +81,8 @@ class WorkerActor extends Actor with ActorLogging{
 
 
   def register(member: Member):Unit = {
-    if (member.hasRole("queryexecuter")) {
-      log.info("To send a request to query executer to register a new worker: " + self)
+    if (member.hasRole("master")) {
+      log.info("To send a request to master actor to register a new worker: " + self)
 
       context.actorSelection(RootActorPath(member.address) / "user" / "master") ! WorkerActorRegisteration
 
