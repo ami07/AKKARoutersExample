@@ -82,7 +82,7 @@ class MasterActor extends Actor with ActorLogging{
 
       //create routers
       //split the workers into three groups
-      val backendWorkerActorsPart = split(backendWorkerActors.toList,numViews)
+      val backendWorkerActorsPart = split(backendWorkerActors.toList,numRoutees)
 
       //create three routers, one for each table
       val simpleRouter_L = context.actorOf(ConsistentHashingGroup(backendWorkerActorsPart(0).map(a => a.path.toString),hashMapping=hashMappingPartL).props(),name = "simpleRouter_L" )
