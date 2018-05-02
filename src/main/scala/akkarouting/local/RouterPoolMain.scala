@@ -36,7 +36,7 @@ object RouterPoolMain {
 
     //create routers with pools local to this m/c
     val system: ActorSystem = ActorSystem("AKKARouterLocal")
-    val numRoutees = config.getInt("routingexample.numWorkers")
+    val numRoutees = config.getInt("routingexample.numRoutees")
     val simpleRouter_L = system.actorOf(
       ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartL).props(Props[WorkerActor]),name = "simpleHashPoolRouterL")
 
