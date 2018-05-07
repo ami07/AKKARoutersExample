@@ -12,7 +12,7 @@ object SimpleHashRouterPool{
 
 class SimpleHashRouterPool (routername:String, numRoutees:Int) extends Actor with ActorLogging{
 
-  val routees:List[ActorRef] = List.range(0, 10).map(i => context.system.actorOf(Props[WorkerActor], s"$routername\_WorkerActor_$i"))
+  val routees:List[ActorRef] = List.range(0, 10).map(i => context.system.actorOf(Props[WorkerActor], s"${routername}_WorkerActor_$i"))
 
   override def receive: Receive = {
     case UpdateMessage(tuple : List[String], key:Int, ts:Int) =>{
