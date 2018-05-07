@@ -65,11 +65,11 @@ class WorkerActor extends Actor with ActorLogging{
       }
 
       //adding O(n) processing
-      val viewList = view.toList
+      /*val viewList = view.toList
       viewList.find(e => e._1==tuple(keyIndex))
       for(e <- viewList){
         if(e._1==tuple(keyIndex)) duplicated+=1
-      }
+      }*/
 
       //insert the tuple in the view
       view.addBinding(tuple(keyIndex),tuple)
