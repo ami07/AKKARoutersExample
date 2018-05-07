@@ -3,7 +3,7 @@ package akkarouting.cluster
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.routing.{Broadcast, ConsistentHashingGroup}
 import akka.routing.ConsistentHashingRouter.ConsistentHashMapping
-import akkarouting.core.FileParser
+import akkarouting.core.{FileParser, SimpleHashRouter}
 import akkarouting.core.WorkerActor.{PrintProgress, SetupMsg, UpdateMessage}
 import com.typesafe.config.ConfigFactory
 
@@ -82,14 +82,17 @@ class MasterActor extends Actor with ActorLogging{
 
       //create routers
       //split the workers into three groups
-      val backendWorkerActorsPart = split(backendWorkerActors.toList,numRoutees)
+      val backendWorkerActorsPart: List[List[ActorRef]] = split(backendWorkerActors.toList,numRoutees)
 
       //create three routers, one for each table
-      val simpleRouter_L = context.actorOf(ConsistentHashingGroup(backendWorkerActorsPart(0).map(a => a.path.toString),hashMapping=hashMappingPartL).props(),name = "simpleRouter_L" )
+      val simpleRouter_L = context.actorOf(SimpleHashRouter.props(backendWorkerActorsPart(0)),name = "simpleRouter_L")
+        //context.actorOf(ConsistentHashingGroup(backendWorkerActorsPart(0).map(a => a.path.toString),hashMapping=hashMappingPartL).props(),name = "simpleRouter_L" )
 
-      val simpleRouter_PS = context.actorOf(ConsistentHashingGroup(backendWorkerActorsPart(1).map(a => a.path.toString),hashMapping=hashMappingPartPS).props(),name = "simpleRouter_PS" )
+      val simpleRouter_PS = context.actorOf(SimpleHashRouter.props(backendWorkerActorsPart(1)),name = "simpleRouter_PS")
+      //context.actorOf(ConsistentHashingGroup(backendWorkerActorsPart(1).map(a => a.path.toString),hashMapping=hashMappingPartPS).props(),name = "simpleRouter_PS" )
 
-      val simpleRouter_S = context.actorOf(ConsistentHashingGroup(backendWorkerActorsPart(2).map(a => a.path.toString),hashMapping=hashMappingPartS).props(),name = "simpleRouter_S" )
+      val simpleRouter_S = context.actorOf(SimpleHashRouter.props(backendWorkerActorsPart(2)),name = "simpleRouter_S")
+      //context.actorOf(ConsistentHashingGroup(backendWorkerActorsPart(2).map(a => a.path.toString),hashMapping=hashMappingPartS).props(),name = "simpleRouter_S" )
 
 
       //setup actors

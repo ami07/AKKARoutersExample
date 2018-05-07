@@ -3,7 +3,7 @@ package akkarouting.local
 import akka.actor.{ActorSystem, Props}
 import akka.routing.{Broadcast, ConsistentHashingPool}
 import akka.routing.ConsistentHashingRouter.ConsistentHashMapping
-import akkarouting.core.{FileParser, WorkerActor}
+import akkarouting.core.{FileParser, SimpleHashRouterPool, WorkerActor}
 import akkarouting.core.WorkerActor.{PrintProgress, SetupMsg, UpdateMessage}
 import com.typesafe.config.ConfigFactory
 
@@ -38,21 +38,24 @@ object RouterPoolMain {
     val system: ActorSystem = ActorSystem("AKKARouterLocal")
     val numRoutees = config.getInt("routingexample.numRoutees")
     val simpleRouter_L = system.actorOf(
+      SimpleHashRouterPool.props(numRoutees),name = "simpleHashPoolRouterL")
       //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartL).props(Props[WorkerActor]),name = "simpleHashPoolRouterL")
     //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartL).props(Props[WorkerActor].withDispatcher("akka.actor.my-pinned-dispatcher")),name = "simpleHashPoolRouterL")
-      ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartL,routerDispatcher = "akka.actor.router-dispatcher").props(Props[WorkerActor].withDispatcher("akka.actor.worker-dispatcher")),name = "simpleHashPoolRouterL")
+      //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartL,routerDispatcher = "akka.actor.router-dispatcher").props(Props[WorkerActor].withDispatcher("akka.actor.worker-dispatcher")),name = "simpleHashPoolRouterL")
       //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartL).props(Props[WorkerActor].withDispatcher("akka.actor.workerMM-dispatcher")),name = "simpleHashPoolRouterL")
 
     val simpleRouter_S = system.actorOf(
+      SimpleHashRouterPool.props(numRoutees),name = "simpleHashPoolRouterS")
       //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartS).props(Props[WorkerActor]),name = "simpleHashPoolRouterS")
     //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartS).props(Props[WorkerActor].withDispatcher("akka.actor.my-pinned-dispatcher")),name = "simpleHashPoolRouterS")
-      ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartS,routerDispatcher = "akka.actor.router-dispatcher").props(Props[WorkerActor].withDispatcher("akka.actor.worker-dispatcher")),name = "simpleHashPoolRouterS")
+      //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartS,routerDispatcher = "akka.actor.router-dispatcher").props(Props[WorkerActor].withDispatcher("akka.actor.worker-dispatcher")),name = "simpleHashPoolRouterS")
       //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartS).props(Props[WorkerActor].withDispatcher("akka.actor.workerMM-dispatcher")),name = "simpleHashPoolRouterS")
 
     val simpleRouter_PS = system.actorOf(
+      SimpleHashRouterPool.props(numRoutees),name = "simpleHashPoolRouterPS")
       //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartPS).props(Props[WorkerActor]),name = "simpleHashPoolRouterPS")
     //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartPS).props(Props[WorkerActor].withDispatcher("akka.actor.my-pinned-dispatcher")),name = "simpleHashPoolRouterPS")
-      ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartPS,routerDispatcher = "akka.actor.router-dispatcher").props(Props[WorkerActor].withDispatcher("akka.actor.worker-dispatcher")),name = "simpleHashPoolRouterPS")
+      //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartPS,routerDispatcher = "akka.actor.router-dispatcher").props(Props[WorkerActor].withDispatcher("akka.actor.worker-dispatcher")),name = "simpleHashPoolRouterPS")
       //ConsistentHashingPool(numRoutees, virtualNodesFactor =numRoutees, hashMapping= hashMappingPartPS).props(Props[WorkerActor].withDispatcher("akka.actor.workerMM-dispatcher")),name = "simpleHashPoolRouterPS")
 
 
