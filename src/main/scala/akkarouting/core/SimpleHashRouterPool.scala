@@ -4,15 +4,15 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akkarouting.core.SimpleHashRouterPool.{PrintProgress, SetupMsg, UpdateMessage}
 
 object SimpleHashRouterPool{
-  def props(numRoutees:Int): Props = Props(new SimpleHashRouterPool(numRoutees))
+  def props(routername:String,numRoutees:Int): Props = Props(new SimpleHashRouterPool(routername,numRoutees))
   case class UpdateMessage(tuple : List[String], key:Int, ts:Int)
   case class SetupMsg(relationName : String)
   case object PrintProgress
 }
 
-class SimpleHashRouterPool (numRoutees:Int) extends Actor with ActorLogging{
+class SimpleHashRouterPool (routername:String, numRoutees:Int) extends Actor with ActorLogging{
 
-  val routees:List[ActorRef] = List.range(0, 10).map(i => context.system.actorOf(Props[WorkerActor], s"WorkerActor_$i"))
+  val routees:List[ActorRef] = List.range(0, 10).map(i => context.system.actorOf(Props[WorkerActor], s"$routername\_WorkerActor_$i"))
 
   override def receive: Receive = {
     case UpdateMessage(tuple : List[String], key:Int, ts:Int) =>{

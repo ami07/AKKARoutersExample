@@ -25,6 +25,7 @@ class WorkerActor extends Actor with ActorLogging{
   var endTime = System.nanoTime
   var processedMsgs = 0
   var finishedChildren = 0;
+  var duplicated = 0
 
 
   val config = ConfigFactory.load()
@@ -63,6 +64,13 @@ class WorkerActor extends Actor with ActorLogging{
         case _    => 0
       }
 
+      //adding O(n) processing
+      val viewList = view.toList
+      viewList.find(e => e._1==tuple(keyIndex))
+      for(e <- viewList){
+        if(e._1==tuple(keyIndex)) duplicated+=1
+      }
+
       //insert the tuple in the view
       view.addBinding(tuple(keyIndex),tuple)
 
@@ -76,6 +84,7 @@ class WorkerActor extends Actor with ActorLogging{
       val throughput = processedMsgs.toFloat / (duration/1000).toFloat
       log.info(relationName+" :finished processing "+processedMsgs + " taking "+ duration+" ms , throughput so far: "+ throughput +" (msg/sec)")
 
+      context.stop(self)
     }
   }
 

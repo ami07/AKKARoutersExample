@@ -5,13 +5,13 @@ import akkarouting.core.SimpleHashRouter.{PrintProgress, SetupMsg, UpdateMessage
 
 
 object SimpleHashRouter{
-  def props(routees:List[ActorRef]): Props = Props(new SimpleHashRouter(routees))
+  def props(routername:String,routees:List[ActorRef]): Props = Props(new SimpleHashRouter(routername,routees))
   case class UpdateMessage(tuple : List[String], key:Int, ts:Int)
   case class SetupMsg(relationName : String)
   case object PrintProgress
 }
 
-class SimpleHashRouter(routees:List[ActorRef]) extends Actor with ActorLogging{
+class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor with ActorLogging{
 
   val numRoutees = routees.length
 
