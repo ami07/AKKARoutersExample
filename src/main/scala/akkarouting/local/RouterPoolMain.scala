@@ -94,11 +94,11 @@ object RouterPoolMain {
       processedLines += 1
 
       relationName match {
-        case "L" => simpleRouter_L ! UpdateMessage(tuple, tuple(2).toInt,processedLines)
+        case "L" => simpleRouter_L ! UpdateMessage(tuple, tuple(0)+tuple(1)+tuple(2),processedLines)
 
-        case "PS" => simpleRouter_PS ! UpdateMessage(tuple,tuple(1).toInt, processedLines)
+        case "PS" => simpleRouter_PS ! UpdateMessage(tuple,tuple(0)+tuple(1), processedLines)
 
-        case "S" => simpleRouter_S ! UpdateMessage(tuple,tuple(0).toInt, processedLines)
+        case "S" => simpleRouter_S ! UpdateMessage(tuple,tuple(0), processedLines)
 
         case _ =>
       }
