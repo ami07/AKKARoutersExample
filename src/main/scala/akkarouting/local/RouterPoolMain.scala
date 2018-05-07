@@ -3,8 +3,9 @@ package akkarouting.local
 import akka.actor.{ActorSystem, Props}
 import akka.routing.{Broadcast, ConsistentHashingPool}
 import akka.routing.ConsistentHashingRouter.ConsistentHashMapping
+import akkarouting.core.SimpleHashRouterPool.{PrintProgress, SetupMsg, UpdateMessage}
 import akkarouting.core.{FileParser, SimpleHashRouterPool, WorkerActor}
-import akkarouting.core.WorkerActor.{PrintProgress, SetupMsg, UpdateMessage}
+//import akkarouting.core.WorkerActor.{PrintProgress, SetupMsg, UpdateMessage}
 import com.typesafe.config.ConfigFactory
 
 import scala.io.Source
@@ -15,7 +16,7 @@ object RouterPoolMain {
     //load config file
     val config = ConfigFactory.load()
 
-    def hashMappingPartL: ConsistentHashMapping = {
+    /*def hashMappingPartL: ConsistentHashMapping = {
       case UpdateMessage(tuple,ts) => {
         tuple(2)
       }
@@ -31,7 +32,7 @@ object RouterPoolMain {
       case UpdateMessage(tuple,ts) => {
         tuple(0)
       }
-    }
+    }*/
 
 
     //create routers with pools local to this m/c
@@ -60,9 +61,9 @@ object RouterPoolMain {
 
 
     //setup  actors
-    simpleRouter_L ! Broadcast(SetupMsg("L"))
-    simpleRouter_S ! Broadcast(SetupMsg("S"))
-    simpleRouter_PS ! Broadcast(SetupMsg("PS"))
+    simpleRouter_L ! SetupMsg("L")
+    simpleRouter_S ! SetupMsg("S")
+    simpleRouter_PS ! SetupMsg("PS")
     Thread.sleep(3000)
 
 
@@ -93,20 +94,20 @@ object RouterPoolMain {
       processedLines += 1
 
       relationName match {
-        case "L" => simpleRouter_L ! UpdateMessage(tuple, processedLines)
+        case "L" => simpleRouter_L ! UpdateMessage(tuple, tuple(2).toInt,processedLines)
 
-        case "PS" => simpleRouter_PS ! UpdateMessage(tuple, processedLines)
+        case "PS" => simpleRouter_PS ! UpdateMessage(tuple,tuple(1).toInt, processedLines)
 
-        case "S" => simpleRouter_S ! UpdateMessage(tuple, processedLines)
+        case "S" => simpleRouter_S ! UpdateMessage(tuple,tuple(0).toInt, processedLines)
 
         case _ =>
       }
     }
 
     //broadcast to all actors to print the progress they made
-    simpleRouter_L !  Broadcast(PrintProgress)
-    simpleRouter_PS !  Broadcast(PrintProgress)
-    simpleRouter_S !  Broadcast(PrintProgress)
+    simpleRouter_L !  PrintProgress
+    simpleRouter_PS !  PrintProgress
+    simpleRouter_S !  PrintProgress
 
     //get the end time of the reading
     val endTime = System.nanoTime

@@ -23,12 +23,12 @@ class SimpleHashRouterPool (routername:String, numRoutees:Int) extends Actor wit
 
     case SetupMsg(relationName : String) =>{
       //fwd the message to all the routees (broadcast)
-      routees.foreach(_ ! WorkerActor.SetupMsg(relationName))
+      routees.foreach(r => r ! WorkerActor.SetupMsg(relationName))
     }
 
     case PrintProgress =>{
       //fwd the message to all the routees (broadcast)
-      routees.foreach(_ ! WorkerActor.PrintProgress)
+      routees.foreach(r => r ! WorkerActor.PrintProgress)
     }
   }
 }

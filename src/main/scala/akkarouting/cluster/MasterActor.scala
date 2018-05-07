@@ -3,8 +3,9 @@ package akkarouting.cluster
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.routing.{Broadcast, ConsistentHashingGroup}
 import akka.routing.ConsistentHashingRouter.ConsistentHashMapping
+import akkarouting.core.SimpleHashRouter.{PrintProgress, SetupMsg, UpdateMessage}
 import akkarouting.core.{FileParser, SimpleHashRouter}
-import akkarouting.core.WorkerActor.{PrintProgress, SetupMsg, UpdateMessage}
+//import akkarouting.core.WorkerActor.{PrintProgress, SetupMsg, UpdateMessage}
 import com.typesafe.config.ConfigFactory
 
 import scala.io.Source
@@ -52,7 +53,7 @@ class MasterActor extends Actor with ActorLogging{
     case ProcessStream =>{
       log.info("got enough workers -- start executing query")
 
-      def hashMappingPartL: ConsistentHashMapping = {
+      /*def hashMappingPartL: ConsistentHashMapping = {
         case UpdateMessage(tuple,ts) => {
           tuple(2)
         }
@@ -68,7 +69,7 @@ class MasterActor extends Actor with ActorLogging{
         case UpdateMessage(tuple,ts) => {
           tuple(0)
         }
-      }
+      }*/
 
       //function to split a list into n sub-lists
       def split[A](xs: List[A], n: Int): List[List[A]] = {
@@ -96,9 +97,9 @@ class MasterActor extends Actor with ActorLogging{
 
 
       //setup actors
-      simpleRouter_L ! Broadcast(SetupMsg("L"))
-      simpleRouter_S ! Broadcast(SetupMsg("S"))
-      simpleRouter_PS ! Broadcast(SetupMsg("PS"))
+      simpleRouter_L ! SetupMsg("L")
+      simpleRouter_S ! SetupMsg("S")
+      simpleRouter_PS ! SetupMsg("PS")
       Thread.sleep(3000)
 
       //get the start time of the reading
@@ -128,20 +129,20 @@ class MasterActor extends Actor with ActorLogging{
         processedLines += 1
 
         relationName match {
-          case "L" => simpleRouter_L ! UpdateMessage(tuple, processedLines)
+          case "L" => simpleRouter_L ! UpdateMessage(tuple, tuple(2).toInt, processedLines)
 
-          case "PS" => simpleRouter_PS ! UpdateMessage(tuple, processedLines)
+          case "PS" => simpleRouter_PS ! UpdateMessage(tuple, tuple(1).toInt,processedLines)
 
-          case "S" => simpleRouter_S ! UpdateMessage(tuple, processedLines)
+          case "S" => simpleRouter_S ! UpdateMessage(tuple,tuple(0).toInt, processedLines)
 
           case _ =>
         }
       }
 
       //broadcast to all actors to print the progress they made
-      simpleRouter_L !  Broadcast(PrintProgress)
-      simpleRouter_PS !  Broadcast(PrintProgress)
-      simpleRouter_S !  Broadcast(PrintProgress)
+      simpleRouter_L !  PrintProgress
+      simpleRouter_PS !  PrintProgress
+      simpleRouter_S !  PrintProgress
 
       //get the end time of the reading
       val endTime = System.nanoTime
