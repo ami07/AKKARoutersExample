@@ -14,10 +14,12 @@ object SimpleHashRouter{
 class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor with ActorLogging{
 
   val numRoutees = routees.length
+  var routedMessges = 0
 
   override def receive: Receive = {
     case UpdateMessage(tuple : List[String], key:String, ts:Int) =>{
       //fwd the message to a selected routee
+      routedMessges +=1
       val selectedRouteeIndex = key.toLong % numRoutees
       routees(selectedRouteeIndex.toInt) ! WorkerActor.UpdateMessage(tuple,ts)
     }
@@ -29,6 +31,7 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
 
     case PrintProgress =>{
       //fwd the message to all the routees (broadcast)
+      log.info("Router: total messages "+routedMessges)
       routees.foreach(_ ! WorkerActor.PrintProgress)
     }
   }
