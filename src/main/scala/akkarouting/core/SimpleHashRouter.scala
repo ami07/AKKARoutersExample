@@ -6,7 +6,7 @@ import akkarouting.core.SimpleHashRouter.{PrintProgress, SetupMsg, UpdateMessage
 
 object SimpleHashRouter{
   def props(routername:String,routees:List[ActorRef]): Props = Props(new SimpleHashRouter(routername,routees))
-  case class UpdateMessage(tuple : List[String], key:Int, ts:Int)
+  case class UpdateMessage(tuple : List[String], key:String, ts:Int)
   case class SetupMsg(relationName : String)
   case object PrintProgress
 }
@@ -16,10 +16,10 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
   val numRoutees = routees.length
 
   override def receive: Receive = {
-    case UpdateMessage(tuple : List[String], key:Int, ts:Int) =>{
+    case UpdateMessage(tuple : List[String], key:String, ts:Int) =>{
       //fwd the message to a selected routee
-      val selectedRouteeIndex = key % numRoutees
-      routees(selectedRouteeIndex) ! WorkerActor.UpdateMessage(tuple,ts)
+      val selectedRouteeIndex = key.toLong % numRoutees
+      routees(selectedRouteeIndex.toInt) ! WorkerActor.UpdateMessage(tuple,ts)
     }
 
     case SetupMsg(relationName : String) =>{

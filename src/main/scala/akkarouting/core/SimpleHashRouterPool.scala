@@ -18,8 +18,9 @@ class SimpleHashRouterPool (routername:String, numRoutees:Int) extends Actor wit
   override def receive: Receive = {
     case UpdateMessage(tuple : List[String], key:String, ts:Int) =>{
       //fwd the message to a selected routee
-      val selectedRouteeIndex = Math.abs(MH3.stringHash(key, MH3.stringSeed)) % numRoutees
-      routees(selectedRouteeIndex) ! WorkerActor.UpdateMessage(tuple,ts)
+      //val selectedRouteeIndex = Math.abs(MH3.stringHash(key, MH3.stringSeed)) % numRoutees
+      val selectedRouteeIndex = key.toLong % numRoutees
+      routees(selectedRouteeIndex.toInt) ! WorkerActor.UpdateMessage(tuple,ts)
     }
 
     case SetupMsg(relationName : String) =>{
