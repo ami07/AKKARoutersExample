@@ -86,10 +86,10 @@ class MasterActor extends Actor with ActorLogging{
       val backendWorkerActorsPart: List[List[ActorRef]] = split(backendWorkerActors.toList,numRoutees)
 
       //create three routers, one for each table
-      val simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActorsPart(0)),name = "simpleRouter_L")
+      val simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActorsPart(1)),name = "simpleRouter_L")
         //context.actorOf(ConsistentHashingGroup(backendWorkerActorsPart(0).map(a => a.path.toString),hashMapping=hashMappingPartL).props(),name = "simpleRouter_L" )
 
-      val simpleRouter_PS = context.actorOf(SimpleHashRouter.props("simpleRouter_PS",backendWorkerActorsPart(1)),name = "simpleRouter_PS")
+      val simpleRouter_PS = context.actorOf(SimpleHashRouter.props("simpleRouter_PS",backendWorkerActorsPart(0)),name = "simpleRouter_PS")
       //context.actorOf(ConsistentHashingGroup(backendWorkerActorsPart(1).map(a => a.path.toString),hashMapping=hashMappingPartPS).props(),name = "simpleRouter_PS" )
 
       val simpleRouter_S = context.actorOf(SimpleHashRouter.props("simpleRouter_S",backendWorkerActorsPart(2)),name = "simpleRouter_S")
