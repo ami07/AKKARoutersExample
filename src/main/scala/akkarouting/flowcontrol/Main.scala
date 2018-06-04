@@ -5,7 +5,7 @@ import akka.cluster.Cluster
 import akkarouting.core.WorkerActorCF
 import com.typesafe.config.ConfigFactory
 
-class Main extends App {
+object Main extends App {
 
   //load the config
   val config = ConfigFactory.load()
