@@ -59,7 +59,7 @@ class WorkerActorCF extends Actor with ActorLogging{
 
   def working(relationName : String): Receive = {
     case UpdateMessage(tuple : List[String], key:String, ts:Int) => {
-      log.info("Worker: received a tuple")
+      log.debug("Worker: received a tuple")
       //insert the tuple in the view
       view.addBinding(key,tuple)
 

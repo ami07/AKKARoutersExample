@@ -122,7 +122,7 @@ class MasterActor extends Actor with ActorLogging{
     }*/
 
     case RequestTuples(/*childRelation*/) => {
-      log.info("Master: received a request to send tuple")
+      log.debug("Master: received a request to send tuple")
       //read L tuple from source
       if(streamInsertionLines.hasNext) {
         processedLines += 1
@@ -138,7 +138,7 @@ class MasterActor extends Actor with ActorLogging{
         }
 
       }else{
-        log.info("Master: stream file ended, print progress")
+        log.debug("Master: stream file ended, print progress")
         //we have finished reading all the lines in the stream file -- send a finish message to the worker
         workerActor ! PrintProgress
       }
