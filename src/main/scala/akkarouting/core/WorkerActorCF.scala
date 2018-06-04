@@ -58,9 +58,9 @@ class WorkerActorCF extends Actor with ActorLogging{
   }
 
   def working(relationName : String): Receive = {
-    case UpdateMessage(tuple : List[String], keyIndex:String, ts:Int) => {
+    case UpdateMessage(tuple : List[String], key:String, ts:Int) => {
       //insert the tuple in the view
-      view.addBinding(tuple(keyIndex),tuple)
+      view.addBinding(key,tuple)
 
       //update the end time and counter of processed messages
       endTime = System.nanoTime
