@@ -129,11 +129,12 @@ class MasterActor extends Actor with ActorLogging{
       log.debug("Master: received a request to send tuple")
       //read L tuple from source
       if(streamInsertionLines.hasNext) {
-        processedLines += 1
+
 
         var numMessages = 0
 
         while(numMessages < flowController && streamInsertionLines.hasNext) {
+          log.info("to create a batch and send it to worker -- numMessages sent so far for this pull request : "+numMessages+ "flowcontroller val: "+flowController)
           //get enugh tuples to fill the batch
           var num = 0
           val batch: ListBuffer[(List[String], String)] = ListBuffer.empty
@@ -141,6 +142,7 @@ class MasterActor extends Actor with ActorLogging{
           while (num < batchLength && streamInsertionLines.hasNext) {
             //parse the line
             line = streamInsertionLines.next()
+            processedLines += 1
             val (relationName, tuple) = FileParser.parse(line)
 
             //send a message to worker
@@ -164,6 +166,13 @@ class MasterActor extends Actor with ActorLogging{
           sender ! UpdateMessageBatch(batch.toList, processedLines)
 
           numMessages +=1
+        }
+        log.info("finished sending all message for this pull request")
+        if(!streamInsertionLines.hasNext){
+          //finished the stream file,
+          log.info("Master: stream file ended, print progress")
+          //we have finished reading all the lines in the stream file -- send a finish message to the worker
+          workerActor ! PrintProgress
         }
 
       }else{
