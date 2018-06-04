@@ -31,6 +31,9 @@ class WorkerActorCF extends Actor with ActorLogging{
   val config = ConfigFactory.load()
 
   val isLocalProvider = if(config.getString("akka.actor.provider")=="local") true else false
+
+  val flowController = config.getInt("routingexample.flowController")
+  var flowControlMessages = 0
   // subscribe to cluster changes, MemberUp
   // re-subscribe when restart
   override def preStart(): Unit = {
@@ -55,6 +58,7 @@ class WorkerActorCF extends Actor with ActorLogging{
       become(working(relationName))
       //request tuples from the master
       sender ! RequestTuples()
+      flowControlMessages +=1
     }
   }
 
@@ -83,7 +87,11 @@ class WorkerActorCF extends Actor with ActorLogging{
         processedMsgs +=1
       }
       //request more tuples from the master
-      sender ! RequestTuples()
+      flowControlMessages +=1
+      if(flowControlMessages >= flowController) {
+        sender ! RequestTuples()
+        flowControlMessages = 0
+      }
     }
 
     case PrintProgress => {
