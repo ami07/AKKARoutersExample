@@ -16,13 +16,13 @@ object NoRouterMain {
     //create an actor system and and three actors, one for each table
     val system: ActorSystem = ActorSystem("AKKANoRouterLocal")
     val simpleActor_L = system.actorOf(Props[WorkerActor], "actorStoreL")
-    val simpleActor_PS = system.actorOf(Props[WorkerActor], "actorStorePS")
-    val simpleActor_S = system.actorOf(Props[WorkerActor], "actorStoreS")
+//    val simpleActor_PS = system.actorOf(Props[WorkerActor], "actorStorePS")
+//    val simpleActor_S = system.actorOf(Props[WorkerActor], "actorStoreS")
 
     //setup actors
     simpleActor_L ! SetupMsg("L")
-    simpleActor_S ! SetupMsg("S")
-    simpleActor_PS ! SetupMsg("PS")
+//    simpleActor_S ! SetupMsg("S")
+//    simpleActor_PS ! SetupMsg("PS")
     Thread.sleep(3000)
 
 
@@ -55,9 +55,9 @@ object NoRouterMain {
       relationName match {
         case "L" => simpleActor_L ! UpdateMessage(tuple, processedLines)
 
-        case "PS" => simpleActor_PS ! UpdateMessage(tuple, processedLines)
+        /*case "PS" => simpleActor_PS ! UpdateMessage(tuple, processedLines)
 
-        case "S" => simpleActor_S ! UpdateMessage(tuple, processedLines)
+        case "S" => simpleActor_S ! UpdateMessage(tuple, processedLines)*/
 
         case _ =>
       }
@@ -65,8 +65,8 @@ object NoRouterMain {
 
     //print progress at each actor
     simpleActor_L ! PrintProgress
-    simpleActor_PS ! PrintProgress
-    simpleActor_S ! PrintProgress
+//    simpleActor_PS ! PrintProgress
+//    simpleActor_S ! PrintProgress
 
     //get the end time of the reading
     val endTime = System.nanoTime
