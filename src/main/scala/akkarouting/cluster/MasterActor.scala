@@ -27,7 +27,7 @@ class MasterActor extends Actor with ActorLogging{
   val numRoutees = config.getInt("routingexample.numRoutees")
   val numViews = config.getInt("routingexample.numViews")
   val neededNumberOfWorkers = numRoutees * numViews
-  val myRouter = config.getString("routingexample.routerType").toLowerCase.equals("SHR")
+  val myRouter = config.getString("routingexample.routerType").toLowerCase.equals("shr")
 
 
   override def receive: Receive = {
@@ -142,7 +142,7 @@ class MasterActor extends Actor with ActorLogging{
         simpleRouter_S !  PrintProgress*/
 
       }else {
-        log.info("Use my ConsistentHashingGroup")
+        log.info("Use ConsistentHashingGroup")
         val simpleRouter_L = context.actorOf(ConsistentHashingGroup(backendWorkerActors.toList.map(a => a.path.toString),hashMapping=hashMappingPartL).props(),name = "simpleRouter_L" )
         //setup actors
         simpleRouter_L ! Broadcast(WorkerActor.SetupMsg("L"))
