@@ -3,7 +3,7 @@ package akkarouting.core
 import akka.actor.{Actor, ActorLogging, RootActorPath}
 import akka.cluster.{Cluster, Member}
 import akka.cluster.ClusterEvent.MemberUp
-import akkarouting.core.WorkerActorCF.{PrintProgress, SetupMsg, UpdateMessage}
+import akkarouting.core.WorkerActorCF.{PrintProgress, SetupMsg, UpdateMessage, UpdateMessageBatch}
 import akkarouting.flowcontrol.MasterActor.{RequestTuples, WorkerActorRegisteration}
 import com.typesafe.config.ConfigFactory
 
@@ -11,6 +11,7 @@ import scala.collection.mutable.{HashMap, MultiMap, Set}
 
 object  WorkerActorCF{
   case class UpdateMessage(tuple : List[String], key:String, ts:Int)
+  case class UpdateMessageBatch(tuples : List[(List[String],String)], ts:Int)
   case class SetupMsg(relationName : String)
   case object PrintProgress
 }
@@ -67,6 +68,20 @@ class WorkerActorCF extends Actor with ActorLogging{
       endTime = System.nanoTime
       processedMsgs +=1
 
+      //request more tuples from the master
+      sender ! RequestTuples()
+    }
+
+    case UpdateMessageBatch(tuples : List[(List[String],String)], ts:Int) =>{
+      log.debug("Worker: received a tuple")
+      //insert the tuples in the view
+      tuples.foreach{tuple =>
+        view.addBinding(tuple._2,tuple._1)
+
+        //update the end time and counter of processed messages
+        endTime = System.nanoTime
+        processedMsgs +=1
+      }
       //request more tuples from the master
       sender ! RequestTuples()
     }

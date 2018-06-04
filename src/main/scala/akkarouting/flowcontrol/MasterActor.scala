@@ -5,11 +5,12 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.stream.scaladsl.{FileIO, Sink, Source, StreamRefs}
 import akka.stream.{ActorMaterializer, IOResult}
 import akka.util.ByteString
-import akkarouting.core.WorkerActorCF.{PrintProgress, SetupMsg, UpdateMessage}
+import akkarouting.core.WorkerActorCF.{PrintProgress, SetupMsg, UpdateMessage, UpdateMessageBatch}
 import akkarouting.core.{FileParser, WorkerActorCF}
 import akkarouting.flowcontrol.MasterActor.{ProcessStream, RequestTuples, WorkerActorRegisteration}
 import com.typesafe.config.ConfigFactory
 
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 //import scala.io.Source
 
@@ -53,6 +54,8 @@ class MasterActor extends Actor with ActorLogging{
   }else{
     streamFile.getLines()
   }
+  val batchLength = config.getInt("routingexample.batchLength")
+
   var line : String = null
   var processedLines = 0
 
@@ -80,7 +83,7 @@ class MasterActor extends Actor with ActorLogging{
         startTime = System.nanoTime
 
         //now setup the router and routees
-        log.info("Use my SimpleHashRouter")
+//        log.info("Use my SimpleHashRouter")
         //val simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActors.toList/*backendWorkerActorsPart(1)*/),name = "simpleRouter_L")
 
         workerActor = backendWorkerActors.head //context.actorOf(Props[WorkerActorCF], name = "workerActor")
@@ -126,16 +129,34 @@ class MasterActor extends Actor with ActorLogging{
       //read L tuple from source
       if(streamInsertionLines.hasNext) {
         processedLines += 1
-        //parse the line
-        line = streamInsertionLines.next()
-        val (relationName, tuple) = FileParser.parse(line)
 
-        //send a message to worker
-        relationName match {
-          case "L" => sender ! UpdateMessage(tuple ,tuple(2), processedLines)
-          case "PS" => sender ! UpdateMessage(tuple ,tuple(1), processedLines)
-          case "S" => sender ! UpdateMessage(tuple ,tuple(0), processedLines)
+        //get enugh tuples to fill the batch
+        var num = 0
+        val batch: ListBuffer[(List[String], String)] = ListBuffer.empty
+        var tuplePair : (List[String],String) = null
+        while(num < batchLength && streamInsertionLines.hasNext) {
+          //parse the line
+          line = streamInsertionLines.next()
+          val (relationName, tuple) = FileParser.parse(line)
+
+          //send a message to worker
+          relationName match {
+            case "L" => {
+              tuplePair = (tuple, tuple(2))
+              batch +=  tuplePair
+            } //sender ! UpdateMessage(tuple, tuple(2), processedLines)
+            case "PS" => {
+              tuplePair = (tuple, tuple(1))
+              batch +=  tuplePair
+            }//sender ! UpdateMessage(tuple, tuple(1), processedLines)
+            case "S" => {
+              tuplePair = (tuple, tuple(0))
+              batch +=  tuplePair
+            }//sender ! UpdateMessage(tuple, tuple(0), processedLines)
+          }
         }
+        //end the batch to sender
+        sender ! UpdateMessageBatch(batch.toList,processedLines)
 
       }else{
         log.debug("Master: stream file ended, print progress")
