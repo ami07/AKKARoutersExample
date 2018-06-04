@@ -154,6 +154,7 @@ class MasterActor extends Actor with ActorLogging{
               batch +=  tuplePair
             }//sender ! UpdateMessage(tuple, tuple(0), processedLines)
           }
+          num +=1
         }
         //end the batch to sender
         sender ! UpdateMessageBatch(batch.toList,processedLines)
