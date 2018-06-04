@@ -134,7 +134,7 @@ class MasterActor extends Actor with ActorLogging{
         var numMessages = 0
 
         while(numMessages < flowController && streamInsertionLines.hasNext) {
-          log.info("to create a batch and send it to worker -- numMessages sent so far for this pull request : "+numMessages+ "flowcontroller val: "+flowController)
+          log.debug("to create a batch and send it to worker -- numMessages sent so far for this pull request : "+numMessages+ "flowcontroller val: "+flowController)
           //get enugh tuples to fill the batch
           var num = 0
           val batch: ListBuffer[(List[String], String)] = ListBuffer.empty
@@ -167,7 +167,7 @@ class MasterActor extends Actor with ActorLogging{
 
           numMessages +=1
         }
-        log.info("finished sending all message for this pull request")
+        log.debug("finished sending all message for this pull request")
         if(!streamInsertionLines.hasNext){
           //finished the stream file,
           log.info("Master: stream file ended, print progress")
