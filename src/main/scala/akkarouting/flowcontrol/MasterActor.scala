@@ -55,6 +55,7 @@ class MasterActor extends Actor with ActorLogging{
     streamFile.getLines()
   }
   val batchLength = config.getInt("routingexample.batchLength")
+  val flowController = config.getInt("routingexample.flowController")
 
   var line : String = null
   var processedLines = 0
@@ -130,34 +131,40 @@ class MasterActor extends Actor with ActorLogging{
       if(streamInsertionLines.hasNext) {
         processedLines += 1
 
-        //get enugh tuples to fill the batch
-        var num = 0
-        val batch: ListBuffer[(List[String], String)] = ListBuffer.empty
-        var tuplePair : (List[String],String) = null
-        while(num < batchLength && streamInsertionLines.hasNext) {
-          //parse the line
-          line = streamInsertionLines.next()
-          val (relationName, tuple) = FileParser.parse(line)
+        var numMessages = 0
 
-          //send a message to worker
-          relationName match {
-            case "L" => {
-              tuplePair = (tuple, tuple(2))
-              batch +=  tuplePair
-            } //sender ! UpdateMessage(tuple, tuple(2), processedLines)
-            case "PS" => {
-              tuplePair = (tuple, tuple(1))
-              batch +=  tuplePair
-            }//sender ! UpdateMessage(tuple, tuple(1), processedLines)
-            case "S" => {
-              tuplePair = (tuple, tuple(0))
-              batch +=  tuplePair
-            }//sender ! UpdateMessage(tuple, tuple(0), processedLines)
+        while(numMessages < flowController && streamInsertionLines.hasNext) {
+          //get enugh tuples to fill the batch
+          var num = 0
+          val batch: ListBuffer[(List[String], String)] = ListBuffer.empty
+          var tuplePair: (List[String], String) = null
+          while (num < batchLength && streamInsertionLines.hasNext) {
+            //parse the line
+            line = streamInsertionLines.next()
+            val (relationName, tuple) = FileParser.parse(line)
+
+            //send a message to worker
+            relationName match {
+              case "L" => {
+                tuplePair = (tuple, tuple(2))
+                batch += tuplePair
+              } //sender ! UpdateMessage(tuple, tuple(2), processedLines)
+              case "PS" => {
+                tuplePair = (tuple, tuple(1))
+                batch += tuplePair
+              } //sender ! UpdateMessage(tuple, tuple(1), processedLines)
+              case "S" => {
+                tuplePair = (tuple, tuple(0))
+                batch += tuplePair
+              } //sender ! UpdateMessage(tuple, tuple(0), processedLines)
+            }
+            num += 1
           }
-          num +=1
+          //end the batch to sender
+          sender ! UpdateMessageBatch(batch.toList, processedLines)
+
+          numMessages +=1
         }
-        //end the batch to sender
-        sender ! UpdateMessageBatch(batch.toList,processedLines)
 
       }else{
         log.debug("Master: stream file ended, print progress")
