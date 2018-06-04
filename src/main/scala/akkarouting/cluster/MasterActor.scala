@@ -100,6 +100,7 @@ class MasterActor extends Actor with ActorLogging{
 
       //create three routers, one for each table
       if(myRouter){
+        log.info("Use my SimpleHashRouter")
         val simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActors.toList/*backendWorkerActorsPart(1)*/),name = "simpleRouter_L")
         //setup actors
         simpleRouter_L ! SimpleHashRouter.SetupMsg("L")
@@ -141,9 +142,10 @@ class MasterActor extends Actor with ActorLogging{
         simpleRouter_S !  PrintProgress*/
 
       }else {
+        log.info("Use my ConsistentHashingGroup")
         val simpleRouter_L = context.actorOf(ConsistentHashingGroup(backendWorkerActors.toList.map(a => a.path.toString),hashMapping=hashMappingPartL).props(),name = "simpleRouter_L" )
         //setup actors
-        simpleRouter_L ! WorkerActor.SetupMsg("L")
+        simpleRouter_L ! Broadcast(WorkerActor.SetupMsg("L"))
         /*simpleRouter_S ! SetupMsg("S")
         simpleRouter_PS ! SetupMsg("PS")*/
         Thread.sleep(3000)
@@ -176,7 +178,7 @@ class MasterActor extends Actor with ActorLogging{
         }
 
         //broadcast to all actors to print the progress they made
-        simpleRouter_L !  WorkerActor.PrintProgress
+        simpleRouter_L !  Broadcast(WorkerActor.PrintProgress)
         /*simpleRouter_PS !  PrintProgress
         simpleRouter_S !  PrintProgress*/
       }
