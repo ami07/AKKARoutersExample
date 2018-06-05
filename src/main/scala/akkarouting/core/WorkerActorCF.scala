@@ -57,7 +57,7 @@ class WorkerActorCF extends Actor with ActorLogging{
     case SetupMsg(relationName) => {
       become(working(relationName))
       //request tuples from the master
-      sender ! RequestTuples()
+      sender ! RequestTuplesR()
       flowControlMessages +=1
     }
   }
