@@ -106,7 +106,7 @@ class WorkerActorCF extends Actor with ActorLogging{
     }
 
     case UpdateMessageBatchR(tuples : List[(List[String],String)], ts:Int) =>{
-      log.info("Worker/routee: received a list of tuples")
+      log.debug("Worker/routee: received a list of tuples")
       //insert the tuples in the view
       tuples.foreach{tuple =>
         view.addBinding(tuple._2,tuple._1)
@@ -119,7 +119,7 @@ class WorkerActorCF extends Actor with ActorLogging{
       //TODO possibly have the threshould 75% of the controller value and update the flowControlMessages accordingly
       flowControlMessages +=1
       if(flowControlMessages >= flowController) {
-        log.info("Worker/routee: to pull more tuples from the master")
+        log.debug("Worker/routee: to pull more tuples from the master")
         master ! RequestTuplesR()
         flowControlMessages = 0
       }

@@ -18,6 +18,7 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
 
   val numRoutees = routees.length
   var routedMessges = 0
+  var routedTuples = 0
 
   override def receive: Receive = {
     case UpdateMessage(tuple : List[String], key:String, ts:Int) =>{
@@ -39,9 +40,10 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
     }
 
     case UpdateMessageCF(tuples : List[(List[String],String)], keyIndex:Int, ts:Int) =>{
-      log.info("Router: received update message for routee with index: "+keyIndex)
+      log.debug("Router: received update message for routee with index: "+keyIndex)
       //fwd the message to a selected routee
       routedMessges +=1
+      routedTuples +=tuples.length
       //val selectedRouteeIndex = keyIndex.toLong % numRoutees
       routees(keyIndex) ! WorkerActorCF.UpdateMessageBatchR(tuples,ts)
     }
@@ -53,7 +55,7 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
 
     case PrintProgressCF =>{
       //fwd the message to all the routees (broadcast)
-      log.info("Router: total messages "+routedMessges)
+      log.info("Router: total messages "+routedMessges+" and total num of tuples "+ routedTuples +" to mark as stream is completed and print progress")
       routees.foreach(_ ! WorkerActorCF.PrintProgress)
     }
   }

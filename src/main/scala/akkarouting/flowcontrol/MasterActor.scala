@@ -63,6 +63,7 @@ class MasterActor extends Actor with ActorLogging{
 
   var line : String = null
   var processedLines = 0
+  var printProgressSentFlag = false
 
   var startTime = System.nanoTime
 
@@ -207,7 +208,7 @@ class MasterActor extends Actor with ActorLogging{
         var keyIndex:Int = 0
 
         while(numMessages < flowController && streamInsertionLines.hasNext) {
-          log.info("RequestTuplesR: to create a batch and send it to worker -- numMessages sent so far for this pull request : "+numMessages+ "flowcontroller val: "+flowController)
+          log.debug("RequestTuplesR: to create a batch and send it to worker -- numMessages sent so far for this pull request : "+numMessages+ "flowcontroller val: "+flowController)
           //get enugh tuples to fill the batch
           var num = 0
           val batch = new HashMap[Int,Set[(List[String],String)]] with MultiMap[Int, (List[String],String)] //ListBuffer.empty
@@ -241,25 +242,29 @@ class MasterActor extends Actor with ActorLogging{
           }
           //end the batch to sender
           batch.foreach{b =>
-            log.info("RequestTuplesR: send a batch to worker for routee with index "+b._1+" batch size: "+ b._2.size)
+            log.debug("RequestTuplesR: send a batch to worker for routee with index "+b._1+" batch size: "+ b._2.size)
             simpleRouter_L ! UpdateMessageCF(b._2.toList, b._1, processedLines)
           }
 
 
           numMessages +=1
         }
-        log.info("finished sending all message for this pull request")
-        if(!streamInsertionLines.hasNext){
+        log.debug("finished sending all message for this pull request")
+        if(!streamInsertionLines.hasNext && !printProgressSentFlag){
           //finished the stream file,
           log.info("Master: stream file ended, print progress")
           //we have finished reading all the lines in the stream file -- send a finish message to the worker
           simpleRouter_L ! PrintProgressCF
+          printProgressSentFlag = true
         }
 
       }else{
-        log.debug("Master: stream file ended, print progress")
-        //we have finished reading all the lines in the stream file -- send a finish message to the worker
-        simpleRouter_L ! PrintProgressCF
+        if(!printProgressSentFlag) {
+          log.info("Master: stream file ended, print progress")
+          //we have finished reading all the lines in the stream file -- send a finish message to the worker
+          simpleRouter_L ! PrintProgressCF
+          printProgressSentFlag = true
+        }
       }
     }
 
