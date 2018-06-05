@@ -42,12 +42,12 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
       //fwd the message to a selected routee
       routedMessges +=1
       //val selectedRouteeIndex = keyIndex.toLong % numRoutees
-      routees(keyIndex) ! WorkerActorCF.UpdateMessageBatch(tuples,ts)
+      routees(keyIndex) ! WorkerActorCF.UpdateMessageBatchR(tuples,ts)
     }
 
     case SetupMsgCF(relationName : String, master : ActorRef) =>{
       //fwd the message to all the routees (broadcast)
-      routees.foreach(_ ! WorkerActorCF.SetupMsg(relationName, master))
+      routees.foreach(_ ! WorkerActorCF.SetupMsgR(relationName, master))
     }
 
     case PrintProgressCF =>{

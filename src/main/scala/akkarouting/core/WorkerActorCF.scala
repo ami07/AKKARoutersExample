@@ -3,7 +3,7 @@ package akkarouting.core
 import akka.actor.{Actor, ActorLogging, ActorRef, RootActorPath}
 import akka.cluster.{Cluster, Member}
 import akka.cluster.ClusterEvent.MemberUp
-import akkarouting.core.WorkerActorCF.{PrintProgress, SetupMsg, UpdateMessage, UpdateMessageBatch}
+import akkarouting.core.WorkerActorCF._
 import akkarouting.flowcontrol.MasterActor.{RequestTuples, RequestTuplesR, WorkerActorRegisteration}
 import com.typesafe.config.ConfigFactory
 
@@ -13,6 +13,8 @@ object  WorkerActorCF{
   case class UpdateMessage(tuple : List[String], key:String, ts:Int)
   case class UpdateMessageBatch(tuples : List[(List[String],String)], ts:Int)
   case class SetupMsg(relationName : String, master : ActorRef)
+  case class UpdateMessageBatchR(tuples : List[(List[String],String)], ts:Int)
+  case class SetupMsgR(relationName : String, master : ActorRef)
   case object PrintProgress
 }
 class WorkerActorCF extends Actor with ActorLogging{
@@ -55,6 +57,15 @@ class WorkerActorCF extends Actor with ActorLogging{
     case MemberUp(m) => register(m)
 
     case SetupMsg(relationName, master) => {
+      log.info("Setup actor "+relationName+" to pull tuples from master: "+master)
+      become(working(relationName, master))
+      //request tuples from the master
+      master ! RequestTuples()
+      flowControlMessages +=1
+    }
+
+    case SetupMsgR(relationName, master) => {
+      log.info("Setup actor "+relationName+" to pull tuples from master: "+master)
       become(working(relationName, master))
       //request tuples from the master
       master ! RequestTuplesR()
@@ -77,6 +88,24 @@ class WorkerActorCF extends Actor with ActorLogging{
     }
 
     case UpdateMessageBatch(tuples : List[(List[String],String)], ts:Int) =>{
+      log.debug("Worker: received a tuple")
+      //insert the tuples in the view
+      tuples.foreach{tuple =>
+        view.addBinding(tuple._2,tuple._1)
+
+        //update the end time and counter of processed messages
+        endTime = System.nanoTime
+        processedMsgs +=1
+      }
+      //request more tuples from the master
+      flowControlMessages +=1
+      if(flowControlMessages >= flowController) {
+        master ! RequestTuples()
+        flowControlMessages = 0
+      }
+    }
+
+    case UpdateMessageBatchR(tuples : List[(List[String],String)], ts:Int) =>{
       log.debug("Worker: received a tuple")
       //insert the tuples in the view
       tuples.foreach{tuple =>
