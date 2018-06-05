@@ -12,7 +12,7 @@ import akkarouting.flowcontrol.MasterActor.{ProcessStream, RequestTuples, Reques
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
-import scala.collection.mutable.{ListBuffer, MultiMap}
+import scala.collection.mutable.{ListBuffer, MultiMap,HashMap,Set}
 import scala.concurrent.Future
 //import scala.io.Source
 
@@ -209,7 +209,7 @@ class MasterActor extends Actor with ActorLogging{
           log.debug("to create a batch and send it to worker -- numMessages sent so far for this pull request : "+numMessages+ "flowcontroller val: "+flowController)
           //get enugh tuples to fill the batch
           var num = 0
-          val batch = new mutable.HashMap[Int,Set[(List[String],String)]] with MultiMap[Int, (List[String],String)] //ListBuffer.empty
+          val batch = new HashMap[Int,Set[(List[String],String)]] with MultiMap[Int, (List[String],String)] //ListBuffer.empty
           var tuplePair: (List[String], String) = null
           while (num < batchLength && streamInsertionLines.hasNext) {
             //parse the line
