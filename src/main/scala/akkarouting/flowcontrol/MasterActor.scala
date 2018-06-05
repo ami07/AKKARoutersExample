@@ -95,13 +95,13 @@ class MasterActor extends Actor with ActorLogging{
         if(numRoutees==1) {
           log.info("one routee -- do not need a router")
           workerActor = backendWorkerActors.head //context.actorOf(Props[WorkerActorCF], name = "workerActor")
-          workerActor ! SetupMsg("L",self)
+          workerActor ! SetupMsg("L")
           Thread.sleep(3000)
         }else{
           log.info("Use my SimpleHashRouter")
           simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActors.toList/*backendWorkerActorsPart(1)*/),name = "simpleRouter_L")
           //setup actors
-          simpleRouter_L ! SetupMsgCF("L", self)
+          simpleRouter_L ! SetupMsgCF("L",flowController)
           /*simpleRouter_S ! SetupMsg("S")
           simpleRouter_PS ! SetupMsg("PS")*/
           Thread.sleep(3000)
