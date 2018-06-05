@@ -10,7 +10,7 @@ object SimpleHashRouter{
   case class SetupMsg(relationName : String)
   case object PrintProgress
   case class UpdateMessageCF(tuple : List[(List[String],String)], keyIndex:Int, ts:Int)
-  case class SetupMsgCF(relationName : String)
+  case class SetupMsgCF(relationName : String, master : ActorRef)
   case object PrintProgressCF
 }
 
@@ -45,9 +45,9 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
       routees(keyIndex) ! WorkerActorCF.UpdateMessageBatch(tuples,ts)
     }
 
-    case SetupMsgCF(relationName : String) =>{
+    case SetupMsgCF(relationName : String, master : ActorRef) =>{
       //fwd the message to all the routees (broadcast)
-      routees.foreach(_ ! WorkerActorCF.SetupMsg(relationName))
+      routees.foreach(_ ! WorkerActorCF.SetupMsg(relationName, master))
     }
 
     case PrintProgressCF =>{

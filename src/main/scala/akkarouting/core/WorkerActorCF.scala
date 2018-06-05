@@ -1,6 +1,6 @@
 package akkarouting.core
 
-import akka.actor.{Actor, ActorLogging, RootActorPath}
+import akka.actor.{Actor, ActorLogging, ActorRef, RootActorPath}
 import akka.cluster.{Cluster, Member}
 import akka.cluster.ClusterEvent.MemberUp
 import akkarouting.core.WorkerActorCF.{PrintProgress, SetupMsg, UpdateMessage, UpdateMessageBatch}
@@ -12,7 +12,7 @@ import scala.collection.mutable.{HashMap, MultiMap, Set}
 object  WorkerActorCF{
   case class UpdateMessage(tuple : List[String], key:String, ts:Int)
   case class UpdateMessageBatch(tuples : List[(List[String],String)], ts:Int)
-  case class SetupMsg(relationName : String)
+  case class SetupMsg(relationName : String, master : ActorRef)
   case object PrintProgress
 }
 class WorkerActorCF extends Actor with ActorLogging{
@@ -54,15 +54,15 @@ class WorkerActorCF extends Actor with ActorLogging{
   def idle: Receive = {
     case MemberUp(m) => register(m)
 
-    case SetupMsg(relationName) => {
-      become(working(relationName))
+    case SetupMsg(relationName, master) => {
+      become(working(relationName, master))
       //request tuples from the master
-      sender ! RequestTuplesR()
+      master ! RequestTuplesR()
       flowControlMessages +=1
     }
   }
 
-  def working(relationName : String): Receive = {
+  def working(relationName : String, master : ActorRef): Receive = {
     case UpdateMessage(tuple : List[String], key:String, ts:Int) => {
       log.debug("Worker: received a tuple")
       //insert the tuple in the view
@@ -73,7 +73,7 @@ class WorkerActorCF extends Actor with ActorLogging{
       processedMsgs +=1
 
       //request more tuples from the master
-      sender ! RequestTuples()
+      master ! RequestTuples()
     }
 
     case UpdateMessageBatch(tuples : List[(List[String],String)], ts:Int) =>{
@@ -89,7 +89,7 @@ class WorkerActorCF extends Actor with ActorLogging{
       //request more tuples from the master
       flowControlMessages +=1
       if(flowControlMessages >= flowController) {
-        sender ! RequestTuplesR()
+        master ! RequestTuplesR()
         flowControlMessages = 0
       }
     }
