@@ -39,6 +39,7 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
     }
 
     case UpdateMessageCF(tuples : List[(List[String],String)], keyIndex:Int, ts:Int) =>{
+      log.info("Router: received update message for routee with index: "+keyIndex)
       //fwd the message to a selected routee
       routedMessges +=1
       //val selectedRouteeIndex = keyIndex.toLong % numRoutees

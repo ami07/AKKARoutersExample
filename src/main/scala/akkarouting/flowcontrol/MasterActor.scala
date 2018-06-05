@@ -140,7 +140,7 @@ class MasterActor extends Actor with ActorLogging{
     }*/
 
     case RequestTuples(/*childRelation*/) => {
-      log.debug("Master: received a request to send tuple")
+      log.info("Master - RequestTuples: received a request to send tuple")
       //read L tuple from source
       if(streamInsertionLines.hasNext) {
 
@@ -197,7 +197,7 @@ class MasterActor extends Actor with ActorLogging{
     }
 
     case RequestTuplesR(/*childRelation*/) => {
-      log.debug("Master: received a request to send tuple")
+      log.info("Master - RequestTuplesR: received a request to send tuple")
       //read L tuple from source
       if(streamInsertionLines.hasNext) {
 
@@ -206,7 +206,7 @@ class MasterActor extends Actor with ActorLogging{
         var keyIndex:Int = 0
 
         while(numMessages < flowController && streamInsertionLines.hasNext) {
-          log.debug("to create a batch and send it to worker -- numMessages sent so far for this pull request : "+numMessages+ "flowcontroller val: "+flowController)
+          log.info("RequestTuplesR: to create a batch and send it to worker -- numMessages sent so far for this pull request : "+numMessages+ "flowcontroller val: "+flowController)
           //get enugh tuples to fill the batch
           var num = 0
           val batch = new HashMap[Int,Set[(List[String],String)]] with MultiMap[Int, (List[String],String)] //ListBuffer.empty
@@ -240,13 +240,14 @@ class MasterActor extends Actor with ActorLogging{
           }
           //end the batch to sender
           batch.foreach{b =>
+            log.info("RequestTuplesR: send a batch to worker for routee with index "+b._1+" batch size: "+ b._2.size)
             sender ! UpdateMessageCF(b._2.toList, b._1, processedLines)
           }
 
 
           numMessages +=1
         }
-        log.debug("finished sending all message for this pull request")
+        log.info("finished sending all message for this pull request")
         if(!streamInsertionLines.hasNext){
           //finished the stream file,
           log.info("Master: stream file ended, print progress")
