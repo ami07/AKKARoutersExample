@@ -42,6 +42,7 @@ class MasterActor extends Actor with ActorLogging{
   val neededNumberOfWorkers = numRoutees * numViews
 
   var workerActor: ActorRef = null
+  var simpleRouter_L : ActorRef = null
 
 
   //read file with streamed data
@@ -97,7 +98,7 @@ class MasterActor extends Actor with ActorLogging{
           Thread.sleep(3000)
         }else{
           log.info("Use my SimpleHashRouter")
-          val simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActors.toList/*backendWorkerActorsPart(1)*/),name = "simpleRouter_L")
+          simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActors.toList/*backendWorkerActorsPart(1)*/),name = "simpleRouter_L")
           //setup actors
           simpleRouter_L ! SetupMsgCF("L", self)
           /*simpleRouter_S ! SetupMsg("S")
@@ -241,7 +242,7 @@ class MasterActor extends Actor with ActorLogging{
           //end the batch to sender
           batch.foreach{b =>
             log.info("RequestTuplesR: send a batch to worker for routee with index "+b._1+" batch size: "+ b._2.size)
-            sender ! UpdateMessageCF(b._2.toList, b._1, processedLines)
+            simpleRouter_L ! UpdateMessageCF(b._2.toList, b._1, processedLines)
           }
 
 
@@ -252,13 +253,13 @@ class MasterActor extends Actor with ActorLogging{
           //finished the stream file,
           log.info("Master: stream file ended, print progress")
           //we have finished reading all the lines in the stream file -- send a finish message to the worker
-          workerActor ! PrintProgressCF
+          simpleRouter_L ! PrintProgressCF
         }
 
       }else{
         log.debug("Master: stream file ended, print progress")
         //we have finished reading all the lines in the stream file -- send a finish message to the worker
-        workerActor ! PrintProgressCF
+        simpleRouter_L ! PrintProgressCF
       }
     }
 
