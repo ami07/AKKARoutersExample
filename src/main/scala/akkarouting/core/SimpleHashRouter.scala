@@ -2,6 +2,7 @@ package akkarouting.core
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akkarouting.core.SimpleHashRouter._
+import akkarouting.flowcontrol.MasterActor.RequestTuplesR
 
 
 object SimpleHashRouter{
@@ -10,7 +11,7 @@ object SimpleHashRouter{
   case class SetupMsg(relationName : String)
   case object PrintProgress
   case class UpdateMessageCF(tuple : List[(List[String],String)], keyIndex:Int, ts:Int)
-  case class SetupMsgCF(relationName : String, master : ActorRef)
+  case class SetupMsgCF(relationName : String, flowControlThreshold : Int/*, master : ActorRef*/)
   case object PrintProgressCF
 }
 
@@ -19,6 +20,11 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
   val numRoutees = routees.length
   var routedMessges = 0
   var routedTuples = 0
+
+
+  var flowController = 0
+  var flowControlMessages = 0
+
 
   override def receive: Receive = {
     case UpdateMessage(tuple : List[String], key:String, ts:Int) =>{
@@ -46,11 +52,24 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
       routedTuples +=tuples.length
       //val selectedRouteeIndex = keyIndex.toLong % numRoutees
       routees(keyIndex) ! WorkerActorCF.UpdateMessageBatchR(tuples,ts)
+
+      //request more tuples from the master
+      //TODO possibly have the threshould 75% of the controller value and update the flowControlMessages accordingly
+      flowControlMessages +=1
+      if(flowControlMessages >= flowController) {
+        log.debug("Worker/routee: to pull more tuples from the master")
+        sender() ! RequestTuplesR()
+        flowControlMessages = 0
+      }
     }
 
-    case SetupMsgCF(relationName : String, master : ActorRef) =>{
+    case SetupMsgCF(relationName : String, flowControlThreshold : Int/*, master : ActorRef*/) =>{
+      flowController = flowControlThreshold
       //fwd the message to all the routees (broadcast)
-      routees.foreach(_ ! WorkerActorCF.SetupMsgR(relationName, master))
+      routees.foreach(_ ! WorkerActorCF.SetupMsgR(relationName/*, master*/))
+
+      //wait for a little
+
     }
 
     case PrintProgressCF =>{

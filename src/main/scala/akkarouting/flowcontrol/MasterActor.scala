@@ -142,7 +142,7 @@ class MasterActor extends Actor with ActorLogging{
     }*/
 
     case RequestTuples(/*childRelation*/) => {
-      log.info("Master - RequestTuples: received a request to send tuple")
+      log.debug("Master - RequestTuples: received a request to send tuple")
       //read L tuple from source
       if(streamInsertionLines.hasNext) {
 

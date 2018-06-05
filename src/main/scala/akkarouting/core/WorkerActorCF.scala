@@ -12,9 +12,9 @@ import scala.collection.mutable.{HashMap, MultiMap, Set}
 object  WorkerActorCF{
   case class UpdateMessage(tuple : List[String], key:String, ts:Int)
   case class UpdateMessageBatch(tuples : List[(List[String],String)], ts:Int)
-  case class SetupMsg(relationName : String, master : ActorRef)
+  case class SetupMsg(relationName : String/*, master : ActorRef*/)
   case class UpdateMessageBatchR(tuples : List[(List[String],String)], ts:Int)
-  case class SetupMsgR(relationName : String, master : ActorRef)
+  case class SetupMsgR(relationName : String/*, master : ActorRef*/)
   case object PrintProgress
 }
 class WorkerActorCF extends Actor with ActorLogging{
@@ -56,24 +56,24 @@ class WorkerActorCF extends Actor with ActorLogging{
   def idle: Receive = {
     case MemberUp(m) => register(m)
 
-    case SetupMsg(relationName, master) => {
-      log.info("Setup actor "+relationName+" to pull tuples from master: "+master)
-      become(working(relationName, master))
+    case SetupMsg(relationName/*, master*/) => {
+      log.info("Setup actor "+relationName/*+" to pull tuples from master: "+master*/)
+      become(working(relationName/*, master*/))
       //request tuples from the master
-      master ! RequestTuples()
+      sender() ! RequestTuples()
       flowControlMessages +=1
     }
 
-    case SetupMsgR(relationName, master) => {
-      log.info("Setup actor "+relationName+" to pull tuples from master: "+master)
-      become(working(relationName, master))
+    case SetupMsgR(relationName/*, master*/) => {
+      log.info("Setup actor "+relationName/*+" to pull tuples from master: "+master*/)
+      become(working(relationName/*, master*/))
       //request tuples from the master
-      master ! RequestTuplesR()
+//      master ! RequestTuplesR()
       flowControlMessages +=1
     }
   }
 
-  def working(relationName : String, master : ActorRef): Receive = {
+  def working(relationName : String/*, master : ActorRef*/): Receive = {
     case UpdateMessage(tuple : List[String], key:String, ts:Int) => {
       log.debug("Worker: received a tuple")
       //insert the tuple in the view
@@ -84,7 +84,7 @@ class WorkerActorCF extends Actor with ActorLogging{
       processedMsgs +=1
 
       //request more tuples from the master
-      master ! RequestTuples()
+      sender() ! RequestTuples()
     }
 
     case UpdateMessageBatch(tuples : List[(List[String],String)], ts:Int) =>{
@@ -100,7 +100,7 @@ class WorkerActorCF extends Actor with ActorLogging{
       //request more tuples from the master
       flowControlMessages +=1
       if(flowControlMessages >= flowController) {
-        master ! RequestTuples()
+        sender() ! RequestTuples()
         flowControlMessages = 0
       }
     }
@@ -115,14 +115,14 @@ class WorkerActorCF extends Actor with ActorLogging{
         endTime = System.nanoTime
         processedMsgs +=1
       }
-      //request more tuples from the master
+      /*//request more tuples from the master
       //TODO possibly have the threshould 75% of the controller value and update the flowControlMessages accordingly
       flowControlMessages +=1
       if(flowControlMessages >= flowController) {
         log.debug("Worker/routee: to pull more tuples from the master")
         master ! RequestTuplesR()
         flowControlMessages = 0
-      }
+      }*/
     }
 
     case PrintProgress => {
