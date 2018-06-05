@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, RootActorPath}
 import akka.cluster.{Cluster, Member}
 import akka.cluster.ClusterEvent.MemberUp
 import akkarouting.core.WorkerActorCF.{PrintProgress, SetupMsg, UpdateMessage, UpdateMessageBatch}
-import akkarouting.flowcontrol.MasterActor.{RequestTuples, WorkerActorRegisteration}
+import akkarouting.flowcontrol.MasterActor.{RequestTuples, RequestTuplesR, WorkerActorRegisteration}
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable.{HashMap, MultiMap, Set}
@@ -89,7 +89,7 @@ class WorkerActorCF extends Actor with ActorLogging{
       //request more tuples from the master
       flowControlMessages +=1
       if(flowControlMessages >= flowController) {
-        sender ! RequestTuples()
+        sender ! RequestTuplesR()
         flowControlMessages = 0
       }
     }
