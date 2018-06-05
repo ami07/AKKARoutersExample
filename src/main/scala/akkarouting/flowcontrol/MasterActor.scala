@@ -5,12 +5,14 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.stream.scaladsl.{FileIO, Sink, Source, StreamRefs}
 import akka.stream.{ActorMaterializer, IOResult}
 import akka.util.ByteString
+import akkarouting.core.SimpleHashRouter.{PrintProgressCF, SetupMsgCF, UpdateMessageCF}
 import akkarouting.core.WorkerActorCF.{PrintProgress, SetupMsg, UpdateMessage, UpdateMessageBatch}
-import akkarouting.core.{FileParser, WorkerActorCF}
-import akkarouting.flowcontrol.MasterActor.{ProcessStream, RequestTuples, WorkerActorRegisteration}
+import akkarouting.core.{FileParser, SimpleHashRouter, WorkerActorCF}
+import akkarouting.flowcontrol.MasterActor.{ProcessStream, RequestTuples, RequestTuplesR, WorkerActorRegisteration}
 import com.typesafe.config.ConfigFactory
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
+import scala.collection.mutable.{ListBuffer, MultiMap}
 import scala.concurrent.Future
 //import scala.io.Source
 
@@ -18,6 +20,7 @@ object MasterActor{
   case object ProcessStream
   case object WorkerActorRegisteration
   case class RequestTuples(/*childRelation : String*/)
+  case class RequestTuplesR(/*childRelation : String*/)
 }
 
 
@@ -87,9 +90,20 @@ class MasterActor extends Actor with ActorLogging{
 //        log.info("Use my SimpleHashRouter")
         //val simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActors.toList/*backendWorkerActorsPart(1)*/),name = "simpleRouter_L")
 
-        workerActor = backendWorkerActors.head //context.actorOf(Props[WorkerActorCF], name = "workerActor")
-        workerActor ! SetupMsg("L")
-        Thread.sleep(3000)
+        if(numRoutees==1) {
+          log.info("one routee -- do not need a router")
+          workerActor = backendWorkerActors.head //context.actorOf(Props[WorkerActorCF], name = "workerActor")
+          workerActor ! SetupMsg("L")
+          Thread.sleep(3000)
+        }else{
+          log.info("Use my SimpleHashRouter")
+          val simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActors.toList/*backendWorkerActorsPart(1)*/),name = "simpleRouter_L")
+          //setup actors
+          simpleRouter_L ! SetupMsgCF("L")
+          /*simpleRouter_S ! SetupMsg("S")
+          simpleRouter_PS ! SetupMsg("PS")*/
+          Thread.sleep(3000)
+        }
       }else{
         log.info("We now have "+numRegisteredWorkers+" registered worker actors, wait them to reach "+neededNumberOfWorkers)
       }
@@ -179,6 +193,71 @@ class MasterActor extends Actor with ActorLogging{
         log.debug("Master: stream file ended, print progress")
         //we have finished reading all the lines in the stream file -- send a finish message to the worker
         workerActor ! PrintProgress
+      }
+    }
+
+    case RequestTuplesR(/*childRelation*/) => {
+      log.debug("Master: received a request to send tuple")
+      //read L tuple from source
+      if(streamInsertionLines.hasNext) {
+
+
+        var numMessages = 0
+        var keyIndex:Int = 0
+
+        while(numMessages < flowController && streamInsertionLines.hasNext) {
+          log.debug("to create a batch and send it to worker -- numMessages sent so far for this pull request : "+numMessages+ "flowcontroller val: "+flowController)
+          //get enugh tuples to fill the batch
+          var num = 0
+          val batch = new mutable.HashMap[Int,Set[(List[String],String)]] with MultiMap[Int, (List[String],String)] //ListBuffer.empty
+          var tuplePair: (List[String], String) = null
+          while (num < batchLength && streamInsertionLines.hasNext) {
+            //parse the line
+            line = streamInsertionLines.next()
+            processedLines += 1
+            val (relationName, tuple) = FileParser.parse(line)
+
+            //send a message to worker
+            relationName match {
+              case "L" => {
+                tuplePair = (tuple, tuple(2))
+                keyIndex = (tuple(2).toLong % numRoutees).toInt
+                //batch.
+                batch.addBinding(keyIndex,tuplePair)
+              } //sender ! UpdateMessage(tuple, tuple(2), processedLines)
+              case "PS" => {
+                tuplePair = (tuple, tuple(1))
+                keyIndex = (tuple(1).toLong % numRoutees).toInt
+                batch.addBinding(keyIndex,tuplePair)
+              } //sender ! UpdateMessage(tuple, tuple(1), processedLines)
+              case "S" => {
+                tuplePair = (tuple, tuple(0))
+                keyIndex = (tuple(0).toLong % numRoutees).toInt
+                batch.addBinding(keyIndex,tuplePair)
+              } //sender ! UpdateMessage(tuple, tuple(0), processedLines)
+            }
+            num += 1
+          }
+          //end the batch to sender
+          batch.foreach{b =>
+            sender ! UpdateMessageCF(b._2.toList, b._1, processedLines)
+          }
+
+
+          numMessages +=1
+        }
+        log.debug("finished sending all message for this pull request")
+        if(!streamInsertionLines.hasNext){
+          //finished the stream file,
+          log.info("Master: stream file ended, print progress")
+          //we have finished reading all the lines in the stream file -- send a finish message to the worker
+          workerActor ! PrintProgressCF
+        }
+
+      }else{
+        log.debug("Master: stream file ended, print progress")
+        //we have finished reading all the lines in the stream file -- send a finish message to the worker
+        workerActor ! PrintProgressCF
       }
     }
 
