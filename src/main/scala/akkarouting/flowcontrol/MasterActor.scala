@@ -60,6 +60,7 @@ class MasterActor extends Actor with ActorLogging{
   }
   val batchLength = config.getInt("routingexample.batchLength")
   val flowController = config.getInt("routingexample.flowController")
+  val flowControllerPercentage = config.getDouble("routingexample.flowControllerPercentage")
 
   var line : String = null
   var processedLines = 0
@@ -101,7 +102,7 @@ class MasterActor extends Actor with ActorLogging{
           log.info("Use my SimpleHashRouter")
           simpleRouter_L = context.actorOf(SimpleHashRouter.props("simpleRouter_L",backendWorkerActors.toList/*backendWorkerActorsPart(1)*/),name = "simpleRouter_L")
           //setup actors
-          simpleRouter_L ! SetupMsgCF("L",flowController)
+          simpleRouter_L ! SetupMsgCF("L",flowController,flowControllerPercentage)
           /*simpleRouter_S ! SetupMsg("S")
           simpleRouter_PS ! SetupMsg("PS")*/
 //          Thread.sleep(3000)
@@ -199,7 +200,7 @@ class MasterActor extends Actor with ActorLogging{
     }
 
     case RequestTuplesR(/*childRelation*/) => {
-      log.info("Master - RequestTuplesR: received a request to send tuple")
+      log.debug("Master - RequestTuplesR: received a request to send tuple")
       //read L tuple from source
       if(streamInsertionLines.hasNext) {
 

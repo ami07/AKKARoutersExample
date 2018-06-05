@@ -11,7 +11,7 @@ object SimpleHashRouter{
   case class SetupMsg(relationName : String)
   case object PrintProgress
   case class UpdateMessageCF(tuple : List[(List[String],String)], keyIndex:Int, ts:Int)
-  case class SetupMsgCF(relationName : String, flowControlThreshold : Int/*, master : ActorRef*/)
+  case class SetupMsgCF(relationName : String, flowControlThreshold : Int, flowControllerPercentage:Double/*, master : ActorRef*/)
   case object PrintProgressCF
 }
 
@@ -24,6 +24,8 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
 
   var flowController = 0
   var flowControlMessages = 0
+  var flowControllerPercentage: Double = 0.0
+  var flowControlThreshold = 0
 
 
   override def receive: Receive = {
@@ -49,22 +51,25 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
       log.debug("Router: received update message for routee with index: "+keyIndex)
       //fwd the message to a selected routee
       routedMessges +=1
-      routedTuples +=tuples.length
+      //routedTuples +=tuples.length
       //val selectedRouteeIndex = keyIndex.toLong % numRoutees
       routees(keyIndex) ! WorkerActorCF.UpdateMessageBatchR(tuples,ts)
 
       //request more tuples from the master
       //TODO possibly have the threshould 75% of the controller value and update the flowControlMessages accordingly
       flowControlMessages +=1
-      if(flowControlMessages >= flowController) {
+      if(flowControlMessages >= flowControlThreshold /*flowController*/) {
         log.debug("Worker/routee: to pull more tuples from the master")
         sender() ! RequestTuplesR()
-        flowControlMessages = 0
+        flowControlMessages = flowController - flowControlMessages
       }
     }
 
-    case SetupMsgCF(relationName : String, flowControlThreshold : Int/*, master : ActorRef*/) =>{
-      flowController = flowControlThreshold
+    case SetupMsgCF(relationName : String, flowControlVal : Int, flowControllerP: Double/*, master : ActorRef*/) =>{
+      flowController = flowControlVal
+      flowControllerPercentage = flowControllerP
+      flowControlThreshold = (flowController * flowControllerPercentage).toInt
+
       //fwd the message to all the routees (broadcast)
       routees.foreach(_ ! WorkerActorCF.SetupMsgR(relationName/*, master*/))
 
