@@ -104,7 +104,7 @@ class MasterActor extends Actor with ActorLogging{
           simpleRouter_L ! SetupMsgCF("L",flowController)
           /*simpleRouter_S ! SetupMsg("S")
           simpleRouter_PS ! SetupMsg("PS")*/
-          Thread.sleep(3000)
+//          Thread.sleep(3000)
         }
       }else{
         log.info("We now have "+numRegisteredWorkers+" registered worker actors, wait them to reach "+neededNumberOfWorkers)

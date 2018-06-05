@@ -69,7 +69,10 @@ class SimpleHashRouter(routername:String, routees:List[ActorRef]) extends Actor 
       routees.foreach(_ ! WorkerActorCF.SetupMsgR(relationName/*, master*/))
 
       //wait for a little
-
+      Thread.sleep(3000)
+      //start pulling from the master node
+      sender() ! RequestTuplesR()
+      flowControlMessages +=1
     }
 
     case PrintProgressCF =>{
